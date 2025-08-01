@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashlight Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="toggleFlashlight()">Toggle Flashlight</button>
+    <div id="status">Flashlight: Off</div>
+
+    <script>
+        let stream = null;
+        let isFlashlightOn = false;
+
+        async function toggleFlashlight() {
+            try {
+                if (!isFlashlightOn) {
+                    // Request access to the camera (needed to control the flashlight)
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
+                    });
+
+                    const track = stream.getVideoTracks()[0];
+                    // Turn on the flashlight
+                    await track.applyConstraints({
+                        advanced: [{ torch: true }]
+                    });
+
+                    isFlashlightOn = true;
+                    document.getElementById('status').textContent = 'Flashlight: On';
+                } else {
+                    // Turn off the flashlight
+                    const track = stream.getVideoTracks()[0];
+                    await track.applyConstraints({
+                        advanced: [{ torch: false }]
+                    });
+
+                    // Stop the stream to release the camera
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+
+                    isFlashlightOn = false;
+                    document.getElementById('status').textContent = 'Flashlight: Off';
+                }
+            } catch (error) {
+                console.error('Error accessing flashlight:', error);
+                document.getElementById('status').textContent = 'Error: Flashlight not supported or permission denied';
+            }
+        }
+    </script>
+</body>
+</html>
